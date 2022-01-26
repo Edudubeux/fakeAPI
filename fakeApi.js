@@ -1,28 +1,25 @@
-fetch('https://jsonplaceholder.typicode.com/posts')
-  .then(response => {
-    return response.json();
-  })
-  .then(data1 => {
-    const data = localStorage.data;
-
-    if (!data) {
-      localStorage.setItem('data', JSON.stringify(data1));
-      show(data1);
-      return;
-    };
-
-    show(JSON.parse(data));
-  });
-
-let dataFiltered
+const init = () => {
+  if(!localStorage.getItem('data')){
+    fetch('https://jsonplaceholder.typicode.com/posts')
+    .then(response => {
+      return response.json();
+    })
+    .then(obj => {
+      localStorage.setItem('data', JSON.stringify(obj));
+      show(obj);
+    });
+  
+    return;
+  }
+  
+  show(JSON.parse(localStorage.data));
+}
 
 function show(data) {
   const tbody = document.getElementById('tbody');
   let tr = '';
 
   data.forEach(value => {
-    if (!value) return;
-
     tr += `
     <tr>
         <th scope="row">${value.id}</th>
@@ -54,6 +51,7 @@ function showEditModal(id) {
   const header = document.getElementById('exampleModalLabel2');
   const title = document.getElementById('title-name');
   const description = document.getElementById('description-text');
+
   document.getElementById('saveEdit').setAttribute('onclick', `editPost(${id})`)
   document.getElementById('exampleModal2').style.display = 'flex';
 
@@ -64,18 +62,35 @@ function showEditModal(id) {
 
 function editPost(id) {
   const data = JSON.parse(localStorage.data);
+  
   const title = document.getElementById('title-name');
   const description = document.getElementById('description-text');
 
-  data.map(data => {
+  if (!title.value && !description.value) {
+    alert('Nenhum campo pode ficar vazio!')
+    return;
+  };
+
+  if(!title.value) {
+    alert('O campo título não pode ficar vazio!');
+    return;
+  };
+
+  if(!description.value) {
+    alert('O campo descrição não pode ficar vazio!');
+    return;
+  };
+
+  data.forEach(data => {
     if (data.id === id) {
       data.title = title.value;
       data.body = description.value;
     }
   });
 
+  $('#exampleModal2').modal('hide')
   localStorage.setItem('data', JSON.stringify(data));
-  show(data);
+  filter();
 };
 
 function findPost(id) {
@@ -90,24 +105,23 @@ function showRemoveModal(id) {
 function removePost(id) {
   const data = JSON.parse(localStorage.data);
 
-  data.find((value, index) => {
+  data.forEach((value, index) => {
     if (value.id === id) {
-      data.splice(index, 1)
-      return value;
+      data.splice(index, 1);
     }
   });
 
   localStorage.setItem('data', JSON.stringify(data));
-  show(data);
+  filter();
 };
 
 function filter() {
-  const raw = `${localStorage.data}`;
-  const data = JSON.parse(raw);
+  const obj = localStorage.data;
+  const data = JSON.parse(obj);
   const input = document.getElementById('find');
 
-  dataFiltered = data.filter(value => {
-    if (value.title.includes(input.value)) {
+  const dataFiltered = data.filter(value => {
+    if (value.title.includes(input.value.toLowerCase())) {
       return true;
     }
 
@@ -117,5 +131,8 @@ function filter() {
 };
 
 function refresh() {
-  location.reload(true);
+  localStorage.clear();
+  init();
 };
+
+init();
